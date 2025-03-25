@@ -1,0 +1,59 @@
+{
+    "translations": [
+        {
+            "key": "订单ID",
+            "zh": "订单ID",
+            "zh-TW": "訂單ID  ",
+            "tr": "Sipariş Kimliği  ",
+            "th": "รหัสคำสั่งซื้อ  ",
+            "ja": "注文ID",
+            "ko": "주문 ID  ",
+            "en": "Order ID  ",
+            "my": "အမှာစာ ID  "
+        },
+        {
+            "key": "语言",
+            "zh": "语言",
+            "zh-TW": "語言  ",
+            "tr": "Dil  ",
+            "th": "ภาษา  ",
+            "ja": "言語",
+            "ko": "언어  ",
+            "en": "Language  ",
+            "my": "ဘာသာစကား  "
+        },
+        {
+            "key": "当前收银机上有未交班的账号，请联系 %s 完成交班后再登录",
+            "zh": "当前收银机上有未交班的账号，请联系 %s 完成交班后再登录",
+            "zh-TW": "當前收銀機上有未交班的帳號，請聯繫 %s 完成交班後再登入  ",
+            "tr": "Kasada devredilmemiş hesap bulunmaktadır. Lütfen giriş yapmadan önce %s ile iletişime geçerek devir işlemini tamamlayın  ",
+            "th": "บัญชีปัจจุบันบนเครื่องเก็บเงินยังไม่ได้ส่งมอบกะงาน กรุณาติดต่อ %s เพื่อทำการส่งมอบกะงานก่อนเข้าสู่ระบบ  ",
+            "ja": "現在レジに未引き継ぎのアカウントがあります。%s に連絡して引き継ぎを完了してからログインしてください",
+            "ko": "현재 POS기에 미교대 계정이 있습니다. %s에 연락하여 교대를 완료한 후 로그인해 주세요  ",
+            "en": "There are unshifted accounts on the current POS terminal. Please contact %s to complete the shift handover before logging in.  ",
+            "my": "လက်ရှိငွေသွင်းစက်တွင် လှည့်အပ်မထားသောအကောင့်ရှိသည်။ %s ကိုဆက်သွယ်၍ လှည့်အပ်လုပ်ဆောင်ပြီးမှ ဝင်ရောက်ပါ  "
+        },
+        {
+            "key": "解析系统配置失败",
+            "zh": "解析系统配置失败",
+            "zh-TW": "解析系統配置失敗  ",
+            "tr": "Sistem yapılandırması çözümlenemedi  ",
+            "th": "การวิเคราะห์การตั้งค่าระบบล้มเหลว  ",
+            "ja": "システム設定の解析に失敗しました",
+            "ko": "시스템 설정 분석 실패  ",
+            "en": "Failed to parse system configuration  ",
+            "my": "စနစ်ပြင်ဆင်မှုဖိုင်ကို ဖတ်ရှုရာတွင် မအောင်မြင်ပါ  "
+        },
+        {
+            "key": "解析各端-点餐助手设置失败",
+            "zh": "解析各端-点餐助手设置失败",
+            "zh-TW": "解析各端-點餐助手設定失敗  ",
+            "tr": "Sipariş asistanı ayarları çözümlenemedi",
+            "th": "การวิเคราะห์การตั้งค่าเครื่องมือช่วยสั่งอาหารของแต่ละสาขาล้มเหลว",
+            "ja": "各端末-注文アシスタント設定の解析に失敗しました",
+            "ko": "각 단말기-주문 도우미 설정 분석 실패  ",
+            "en": "Failed to parse endpoint - Order Assistant settings",
+            "my": "အဆုံးသတ်အချက်-အစာမှာယူသည့်အကူစနစ်ပြင်ဆင်မှုကို ဖတ်ရှုရာတွင် မအောင်မြင်ပါ"
+        }
+    ]
+}%                 
