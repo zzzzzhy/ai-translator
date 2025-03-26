@@ -20,4 +20,6 @@ class TranslationResult(BaseModel):
     my: Optional[str] = None
 
 class TranslationResponse(BaseModel):
-    translations: List[TranslationResult]
+    code: int
+    message: str
+    data: List[TranslationResult]

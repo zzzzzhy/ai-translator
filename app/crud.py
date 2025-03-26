@@ -1,44 +1,47 @@
+import base64
+import json
 from .database import get_db
-from typing import List, Dict
+from typing import Dict, List, Optional
 
-def get_cached_translations(items: List[Dict], target_lang: str) -> Dict[str, str]:
-    """批量查询缓存"""
-    if not items:
+def get_cached_translations(source_texts: List[str], source_lang: str) -> Dict[str, Dict]:
+    """批量获取缓存（自动Base64解码）"""
+    if not source_texts:
         return {}
-    
-    placeholders = ", ".join(["?"] * len(items))
-    source_texts = [item["content"] for item in items]
-    source_lang = items[0]["lang"]
-    
+
+    placeholders = ", ".join(["?"] * len(source_texts))
     with get_db() as conn:
         cursor = conn.execute(
-            f"""
-            SELECT source_text, translated_text 
-            FROM translations 
-            WHERE source_text IN ({placeholders})
-            AND source_lang = ?
-            AND target_lang = ?
-            """,
-            (*source_texts, source_lang, target_lang))
-        return {row["source_text"]: row["translated_text"] for row in cursor}
+            f"SELECT source_text, translations_blob FROM translations "
+            f"WHERE source_text IN ({placeholders}) AND source_lang = ?",
+            (*source_texts, source_lang)
+        )
+        return {
+            row["source_text"]: json.loads(base64.b64decode(row["translations_blob"]).decode('utf-8'))
+            for row in cursor
+        }
 
-def bulk_save_translations(items: List[Dict], translations: List[str], target_lang: str):
-    """批量保存翻译结果"""
+def save_translations_batch(items: List[Dict], translations: List[Dict]):
+    """批量保存翻译结果（自动Base64编码）"""
     if not items:
         return
-    
-    data = [
-        (item["content"], items[0]["lang"], target_lang, translations[i])
-        for i, item in enumerate(items)
-    ]
-    
+
+    data = []
+    for item, trans in zip(items, translations):
+        # 将整个翻译结果字典转为Base64
+        blob = base64.b64encode(
+            json.dumps(trans).replace("zh_tw", "zh-TW").encode('utf-8')
+        ).decode('utf-8')
+        data.append((
+            item["content"],
+            item["lang"],
+            blob
+        ))
+
     with get_db() as conn:
         conn.executemany(
-            """
-            INSERT OR IGNORE INTO translations
-            (source_text, source_lang, target_lang, translated_text)
-            VALUES (?, ?, ?, ?)
-            """,
+            "INSERT OR REPLACE INTO translations "
+            "(source_text, source_lang, translations_blob) "
+            "VALUES (?, ?, ?)",
             data
         )
         conn.commit()
