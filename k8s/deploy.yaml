@@ -145,19 +145,19 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ai-translation-service
+  name: ai-translation
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ai-translation-service
+      app: ai-translation
   template:
     metadata:
       labels:
-        app: ai-translation-service
+        app: ai-translation
     spec:
       containers:
-      - name: ai-translation-service
+      - name: ai-translation
         image: rubyroes/ai-translation:v1.0.0
         ports:
         - containerPort: 8000
@@ -188,10 +188,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ai-translation-service
+  name: ai-translation
 spec:
   selector:
-    app: ai-translation-service
+    app: ai-translation
   ports:
     - protocol: TCP
       port: 80
