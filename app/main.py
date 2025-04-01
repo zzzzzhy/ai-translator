@@ -1,13 +1,13 @@
 from fastapi import FastAPI, Depends
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
-from app.models import TranslationRequest, TranslationResponse, TranslationResult
-from app.translator import AITranslator
-from app.dependencies import get_translator
-from app.crud import get_cached_translations, save_translations_batch
+from .models import TranslationRequest, TranslationResponse, TranslationResult
+from .translator import AITranslator
+from .dependencies import get_translator
+from .crud import get_cached_translations, save_translations_batch
 import os
 from typing import List, Dict
-from app.database import init_db
+from .database import init_db
 
 init_db()
 app = FastAPI(
