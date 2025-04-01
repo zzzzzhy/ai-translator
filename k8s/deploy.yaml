@@ -173,9 +173,10 @@ spec:
         - name: DB_PATH
           value: "/app/db/translations.db"
         - name: OPENAI_API_KEY
-          secretKeyRef:
-            name: openai-secret
-            key: api-key
+          valueFrom:
+            secretKeyRef:
+              name: openai-secret
+              key: api-key
       volumes:
       - name: db-storage
         persistentVolumeClaim:
