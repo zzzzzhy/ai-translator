@@ -3,7 +3,6 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from .models import TranslationRequest, TranslationResponse, TranslationResult
 from .translator import AITranslator
-from .dependencies import get_translator
 from .crud import get_cached_translations, save_translations_batch
 import os
 from typing import List, Dict
@@ -24,7 +23,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-translator = AITranslator(Depends(get_translator))
+translator = AITranslator(os.getenv("OPENAI_API_KEY"))
 
 
 @app.post("/translate", response_model=TranslationResponse)
