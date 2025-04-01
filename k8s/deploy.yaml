@@ -129,17 +129,17 @@ data:
     app.openapi = custom_openapi
 
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: db-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: hitosea-rbd-sc
-  resources:
-    requests:
-      storage: 1Gi
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: db-pvc
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   storageClassName: hitosea-rbd-sc
+#   resources:
+#     requests:
+#       storage: 1Gi
 
 ---
 apiVersion: apps/v1
@@ -185,9 +185,9 @@ spec:
               name: openai-secret
               key: api-key
       volumes:
-      - name: db-storage
-        persistentVolumeClaim:
-          claimName: db-pvc
+      # - name: db-storage
+      #   persistentVolumeClaim:
+      #     claimName: db-pvc
       - name: main-py
         configMap:
           name: ai-bin
