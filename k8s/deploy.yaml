@@ -162,8 +162,8 @@ spec:
         ports:
         - containerPort: 8000
         volumeMounts:
-        - name: db-storage
-          mountPath: /app/db
+        # - name: db-storage
+        #   mountPath: /app/db
         - name: main-py
           mountPath: /app/main.py
           subPath: main.py
