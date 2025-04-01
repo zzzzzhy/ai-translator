@@ -136,6 +136,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: hitosea-rbd-sc
   resources:
     requests:
       storage: 1Gi
@@ -171,6 +172,10 @@ spec:
           value: "sqlite"
         - name: DB_PATH
           value: "/app/db/translations.db"
+        - name: OPENAI_API_KEY
+          secretKeyRef:
+            name: openai-secret
+            key: api-key
       volumes:
       - name: db-storage
         persistentVolumeClaim:
