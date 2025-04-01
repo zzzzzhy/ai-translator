@@ -163,15 +163,15 @@ spec:
         - containerPort: 8000
         volumeMounts:
         # - name: db-storage
-        #   mountPath: /app/db
+        #   mountPath: /code/db
         - name: main-py
-          mountPath: /app/main.py
+          mountPath: /code/main.py
           subPath: main.py
         env:
         - name: DB_TYPE
           value: "mysql"
         - name: DB_PATH
-          value: "/app/db/translations.db"
+          value: "/code/db/translations.db"
         - name: MYSQL_HOST
           value: "mariadb-repl-internal.hitosea-k8s.svc"
         - name: MYSQL_PASSWORD
