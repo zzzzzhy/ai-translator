@@ -7,10 +7,12 @@ from .dependencies import get_translator
 from .crud import get_cached_translations, save_translations_batch
 import os
 from typing import List, Dict
+from app.database import init_db
 
+init_db()
 app = FastAPI(
     title="AI 翻译服务 API",
-    description="基于 LangGraph 和 OpenAI 的多语言翻译服务",
+    description="基于 langchain 和 AI 的多语言翻译服务",
     version="1.0.0",
 )
 

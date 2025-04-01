@@ -1,4 +1,7 @@
 from langchain_deepseek import ChatDeepSeek
+from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from typing import List, Dict
@@ -6,17 +9,45 @@ from .models import TranslationItem, TranslationResult
 import asyncio
 
 class AITranslator:
-    def __init__(self, api_key: str):
-        self.llm = ChatDeepSeek(
-            model="deepseek-chat",
-            temperature=0,
-            max_tokens=None,
-            timeout=None,
-            max_retries=2,
-            api_key="",
-            streaming=False,
-            # other params...
-        )
+    def __init__(self, api_key: str, model: str = "deepseek", ollama_url: str = None, ollama_model_name: str = None):
+        if model == "deepseek":
+            self.llm = ChatDeepSeek(
+                model="deepseek-chat",
+                temperature=0,
+                max_tokens=None,
+                timeout=None,
+                max_retries=2,
+                api_key=api_key,
+                streaming=False,
+                # other params...
+            )
+        elif model == "openai":
+            self.llm = ChatOpenAI(
+                model="gpt-4o",
+                temperature=0,
+                max_tokens=None,
+                timeout=None,
+                max_retries=2,
+                api_key=api_key,
+                # base_url="...",
+                # organization="...",
+                # other params...
+            )
+        elif model == "google":
+            os.environ["GOOGLE_API_KEY"] = api_key
+            self.llm = ChatGoogleGenerativeAI(
+                model="gemini-1.5-pro",
+                temperature=0,
+                max_tokens=None,
+                timeout=None,
+                max_retries=2,
+                # other params...
+            )
+        elif model == "ollama":
+                self.llm = OllamaLLM(
+                base_url=ollama_url,
+                model=ollama_model_name,
+            )
         self._init_chains()
 
     def _init_chains(self):

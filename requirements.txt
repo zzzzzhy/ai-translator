@@ -1,8 +1,11 @@
 fastapi
 uvicorn
-langgraph
 langchain
 openai
 pydantic
 python-multipart
 langchain-deepseek
+langchain-openai
+langchain-google-vertexai
+langchain-google-genai
+langchain-ollama
