@@ -158,7 +158,7 @@ spec:
     spec:
       containers:
       - name: ai-translation
-        image: rubyroes/ai-translation:bb2b6a6
+        image: rubyroes/ai-translation:latest
         ports:
         - containerPort: 8000
         volumeMounts:
