@@ -169,9 +169,16 @@ spec:
           subPath: main.py
         env:
         - name: DB_TYPE
-          value: "sqlite"
+          value: "mysql"
         - name: DB_PATH
           value: "/app/db/translations.db"
+        - name: MYSQL_HOST
+          value: "mariadb-repl-internal.hitosea-k8s.svc"
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: openai-secret
+              key: password
         - name: OPENAI_API_KEY
           valueFrom:
             secretKeyRef:
