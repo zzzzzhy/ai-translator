@@ -167,23 +167,10 @@ spec:
         - name: main-py
           mountPath: /code/app/main.py
           subPath: main.py
-        env:
-        - name: DB_TYPE
-          value: "mysql"
-        - name: DB_PATH
-          value: "/code/db/translations.db"
-        - name: MYSQL_HOST
-          value: "mariadb-repl.hitosea-k8s.svc"
-        - name: MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
+        envFrom:
+          - secretRef:
               name: openai-secret
-              key: password
-        - name: OPENAI_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: openai-secret
-              key: api-key
+
       volumes:
       # - name: db-storage
       #   persistentVolumeClaim:
