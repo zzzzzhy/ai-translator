@@ -9,7 +9,7 @@ from .models import TranslationItem, TranslationResult
 import asyncio
 
 class AITranslator:
-    def __init__(self, api_key: str, model: str = "deepseek", ollama_url: str = None, ollama_model_name: str = None):
+    def __init__(self, api_key: str, model: str = "deepseek", **kwargs):
         if model == "deepseek":
             self.llm = ChatDeepSeek(
                 model="deepseek-chat",
@@ -19,6 +19,7 @@ class AITranslator:
                 max_retries=2,
                 api_key=api_key,
                 streaming=False,
+                **kwargs,
                 # other params...
             )
         elif model == "openai":
@@ -29,7 +30,7 @@ class AITranslator:
                 timeout=None,
                 max_retries=2,
                 api_key=api_key,
-                # base_url="...",
+                **kwargs,
                 # organization="...",
                 # other params...
             )
@@ -41,12 +42,13 @@ class AITranslator:
                 max_tokens=None,
                 timeout=None,
                 max_retries=2,
+                **kwargs
                 # other params...
             )
         elif model == "ollama":
                 self.llm = OllamaLLM(
-                base_url=ollama_url,
-                model=ollama_model_name,
+                model=model,
+                **kwargs
             )
         self._init_chains()
 

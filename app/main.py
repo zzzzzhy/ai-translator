@@ -23,7 +23,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-translator = AITranslator(os.getenv("OPENAI_API_KEY"))
+translator = AITranslator(os.getenv("OPENAI_API_KEY"), model="openai")
 
 
 @app.post("/translate", response_model=TranslationResponse)
