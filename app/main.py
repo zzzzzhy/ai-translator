@@ -52,7 +52,7 @@ async def translate_with_cache(request: TranslationRequest):
         }
         # 5. 保存新结果
         save_translations_batch(
-            [item.dict() for item in to_translate], list(new_translations.values())
+            [item.model_dump() for item in to_translate], list(new_translations.values())
         )
 
     # 6. 合并结果

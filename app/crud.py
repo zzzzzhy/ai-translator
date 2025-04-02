@@ -31,17 +31,11 @@ def get_cached_translations(source_texts: List[str], source_lang: str) -> Dict[s
             )
             cursor = conn.execute(query, (*source_texts, source_lang))
             rows = cursor.fetchall()
-
     cached_translations = {}
     for row in rows:
-        if DB_TYPE == "mysql":
-            source_text, translations_blob = row
-            translations = json.loads(base64.b64decode(translations_blob).decode("utf-8"))
-        else:
-            translations = json.loads(base64.b64decode(row["translations_blob"]).decode("utf-8"))
-            source_text = row["source_text"]
+        translations = json.loads(base64.b64decode(row["translations_blob"]).decode("utf-8"))
+        source_text = row["source_text"]
         cached_translations[source_text] = translations
-
     return cached_translations
     
 def save_translations_batch(items: List[Dict], translations: List[Dict]):
@@ -61,7 +55,7 @@ def save_translations_batch(items: List[Dict], translations: List[Dict]):
             blob
         ))
 
-    with get_db() as conn:
+    with get_db('write') as conn:
         # 检测是否是MySQL（通过检查是否有cursor()方法）
         # is_mysql = hasattr(conn, 'cursor')
         
