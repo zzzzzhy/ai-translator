@@ -9,7 +9,6 @@ data:
     from fastapi.middleware.cors import CORSMiddleware
     from .models import TranslationRequest, TranslationResponse, TranslationResult
     from .translator import AITranslator
-    from .dependencies import get_translator
     from .crud import get_cached_translations, save_translations_batch
     import os
     from typing import List, Dict

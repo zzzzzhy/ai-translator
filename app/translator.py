@@ -9,7 +9,10 @@ from .models import TranslationItem, TranslationResult
 import asyncio
 
 class AITranslator:
-    def __init__(self, api_key: str, model: str = "deepseek", **kwargs):
+    def __init__(self, api_key: str, model: str = "deepseek",use_proxy: str = None, **kwargs):
+        if use_proxy:
+            os.environ["https_proxy"] = use_proxy
+            os.environ["http_proxy"] = use_proxy
         if model == "deepseek":
             self.llm = ChatDeepSeek(
                 model="deepseek-chat",

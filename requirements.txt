@@ -10,3 +10,4 @@ langchain-google-vertexai
 langchain-google-genai
 langchain-ollama
 pymysql
+socksio
