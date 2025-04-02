@@ -44,24 +44,48 @@ def get_cached_translations(source_texts: List[str], source_lang: str) -> Dict[s
 
     return cached_translations
     
-def save_translations_batch(translations: Dict[str, Dict], source_lang: str):
-    """批量保存翻译（自动Base64编码）"""
+def save_translations_batch(items: List[Dict], translations: List[Dict]):
+    """批量保存翻译结果（自动Base64编码），兼容MySQL和SQLite"""
+    if not items:
+        return
+
+    data = []
+    for item, trans in zip(items, translations):
+        # 将整个翻译结果字典转为Base64
+        blob = base64.b64encode(
+            json.dumps(trans).replace("zh_tw", "zh-TW").encode('utf-8')
+        ).decode('utf-8')
+        data.append((
+            item["content"],
+            item["lang"],
+            blob
+        ))
+
     with get_db() as conn:
+        # 检测是否是MySQL（通过检查是否有cursor()方法）
+        # is_mysql = hasattr(conn, 'cursor')
+        
+        if DB_TYPE == "mysql":
+            # MySQL使用ON DUPLICATE KEY UPDATE语法
+            query = """
+                INSERT INTO translations 
+                (source_text, source_lang, translations_blob) 
+                VALUES (%s, %s, %s)
+                ON DUPLICATE KEY UPDATE translations_blob = VALUES(translations_blob)
+            """
+        else:
+            # SQLite使用INSERT OR REPLACE语法
+            query = """
+                INSERT OR REPLACE INTO translations 
+                (source_text, source_lang, translations_blob) 
+                VALUES (?, ?, ?)
+            """
+        
         if DB_TYPE == "mysql":
             cursor = conn.cursor()
-            for source_text, translation in translations.items():
-                translations_blob = base64.b64encode(json.dumps(translation).encode("utf-8")).decode("utf-8")
-                cursor.execute(
-                    "REPLACE INTO translations (source_text, source_lang, translations_blob) VALUES (%s, %s, %s)",
-                    (source_text, source_lang, translations_blob)
-                )
+            cursor.executemany(query, data)
             conn.commit()
             cursor.close()
         else:
-            for source_text, translation in translations.items():
-                translations_blob = base64.b64encode(json.dumps(translation).encode("utf-8")).decode("utf-8")
-                conn.execute(
-                    "REPLACE INTO translations (source_text, source_lang, translations_blob) VALUES (?, ?, ?)",
-                    (source_text, source_lang, translations_blob)
-                )
+            conn.executemany(query, data)
             conn.commit()

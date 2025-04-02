@@ -6,6 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from typing import List, Dict
 from .models import TranslationItem, TranslationResult
+import os
 import asyncio
 
 class AITranslator:
