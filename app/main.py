@@ -23,7 +23,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-translator = AITranslator(os.getenv("OPENAI_API_KEY"), model="openai")
+translator = AITranslator(os.getenv("OPENAI_API_KEY"), model="google")
 
 
 @app.post("/translate", response_model=TranslationResponse)
@@ -45,8 +45,8 @@ async def translate_with_cache(request: TranslationRequest):
         # 转换格式：{"文本": {"en": "翻译", "ja": "翻訳"...}}
         new_translations = {
             item.content: {
-                lang: getattr(result, lang)
-                for lang in ["zh_tw", "en", "ja", "ko", "tr", "th", "my"]
+                lang: getattr(result, "zh_tw" if lang == "zh-TW" else lang)
+                for lang in ["zh-TW", "en", "ja", "ko", "tr", "th", "my"]
             }
             for item, result in zip(to_translate, raw_results)
         }
