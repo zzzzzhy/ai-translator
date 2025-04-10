@@ -23,7 +23,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-translator = AITranslator(os.getenv("OPENAI_API_KEY"), model="google")
+translator = AITranslator(os.getenv("OPENAI_API_KEY"), os.getenv("MODEL"), os.getenv("PROXY"))
 
 
 @app.post("/translate", response_model=TranslationResponse)
@@ -46,7 +46,7 @@ async def translate_with_cache(request: TranslationRequest):
         new_translations = {
             item.content: {
                 lang: getattr(result, "zh_tw" if lang == "zh-TW" else lang)
-                for lang in ["zh-TW", "en", "ja", "ko", "tr", "th", "my"]
+                for lang in ["zh-TW", "en", "ja", "ko", "tr", "th", "my", "de"]
             }
             for item, result in zip(to_translate, raw_results)
         }
@@ -109,6 +109,7 @@ def custom_openapi():
                         "ko": "언어",
                         "en": "Language",
                         "my": "ဘာသာစကား",
+                        "de": "Sprache",
                     }
                 ]
             }

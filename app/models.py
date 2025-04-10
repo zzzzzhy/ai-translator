@@ -18,6 +18,7 @@ class TranslationResult(BaseModel):
     ko: Optional[str] = None
     en: Optional[str] = None
     my: Optional[str] = None
+    de: Optional[str] = None
 
 class TranslationResponse(BaseModel):
     code: int

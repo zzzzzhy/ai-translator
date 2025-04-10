@@ -73,12 +73,13 @@ class AITranslator:
 - 韩语
 - 英语
 - 缅甸语
+- 德语
 
 请按照指定格式返回结果,保持编号不变。如果存在多种结果,只需要返回一个"""
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_msg),
-            ("human", "请翻译以下文本（保持编号不变）：\n\n{texts}\n\n请按以下格式返回：\n编号. 原文\n  zh-TW: 繁体中文翻译\n  tr: 土耳其语翻译\n  th: 泰语翻译\n  ja: 日语翻译\n  ko: 韩语翻译\n  en: 英语翻译\n  my: 缅甸语翻译")
+            ("human", "请翻译以下文本（保持编号不变）：\n\n{texts}\n\n请按以下格式返回：\n编号. 原文\n  zh-TW: 繁体中文翻译\n  tr: 土耳其语翻译\n  th: 泰语翻译\n  ja: 日语翻译\n  ko: 韩语翻译\n  en: 英语翻译\n  my: 缅甸语翻译\n  de: 德语翻译")
         ])
 
         self.chain = (
@@ -110,7 +111,7 @@ class AITranslator:
         
         # 转换为按语言分组的格式
         translations = {}
-        for lang in ["zh-TW", "tr", "th", "ja", "ko", "en", "my"]:
+        for lang in ["zh-TW", "tr", "th", "ja", "ko", "en", "my", "de"]:
             translations[lang] = [results[i][lang] for i in sorted(results.keys())]
             
         return translations
@@ -134,7 +135,7 @@ class AITranslator:
                 "zh": item.content,
                 **{
                     lang: all_results[lang][idx]
-                    for lang in ["zh-TW", "tr", "th", "ja", "ko", "en", "my"]
+                    for lang in ["zh-TW", "tr", "th", "ja", "ko", "en", "my", "de"]
                 }
             }
             results.append(TranslationResult(**translated))
