@@ -85,7 +85,7 @@ class AITranslator:
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_msg),
-            ("human", "请翻译以下文本（保持编号不变):\n\n{texts}\n\n请按以下格式返回:\n编号:-> <content>原文<content>\n<end>  zh: 简体中文翻译<end>  zh-TW: 繁体中文翻译<end>  tr: 土耳其语翻译<end>  th: 泰语翻译<end>  ja: 日语翻译<end>  ko: 韩语翻译<end>  en: 英语翻译<end>  my: 缅甸语翻译<end>  de: 德语翻译<end>")
+            ("human", "请翻译以下文本（保持编号不变):\n\n{texts}\n\n请按以下格式返回,保留<content>和<end>标签:\n编号:-> <content>原文<content>\n<end>  zh: 简体中文翻译<end>  zh-TW: 繁体中文翻译<end>  tr: 土耳其语翻译<end>  th: 泰语翻译<end>  ja: 日语翻译<end>  ko: 韩语翻译<end>  en: 英语翻译<end>  my: 缅甸语翻译<end>  de: 德语翻译<end>")
         ])
         print_node = RunnableLambda(print_messages)
         self.chain = (
@@ -105,7 +105,6 @@ class AITranslator:
             line = line.strip()
             if not line:
                 continue
-            print("line------", line)
             # 检查是否是编号行
             if line[0].isdigit() and ":->" in line:
                 parts = line.split(":->", 1)
