@@ -100,11 +100,12 @@ class AITranslator:
         """解析多语言批量翻译结果"""
         results = {}
         current_id = None
+        print("response------", response)
         for line in response.content.split("<end>"):
             line = line.strip()
             if not line:
                 continue
-                
+            print("line------", line)
             # 检查是否是编号行
             if line[0].isdigit() and ":->" in line:
                 parts = line.split(":->", 1)
