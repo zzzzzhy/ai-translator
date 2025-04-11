@@ -31,13 +31,12 @@ async def translate_with_cache(request: TranslationRequest):
     # 1. 准备数据
     source_texts = [item.content for item in request.data]
     source_lang = request.data[0].lang if request.data else "zh"
-
+    print("request------", request.data,request.is_food)
     # 2. 查询缓存
     cached = get_cached_translations(source_texts, source_lang)
     print("cached------", cached)
     # 3. 分离需要翻译的文本
     to_translate = [item for item in request.data if item.content not in cached]
-
     # 4. 调用AI翻译
     new_translations = {}
     if to_translate:
@@ -50,11 +49,15 @@ async def translate_with_cache(request: TranslationRequest):
             }
             for item, result in zip(to_translate, raw_results)
         }
-        # 5. 保存新结果
-        save_translations_batch(
-            [item.model_dump() for item in to_translate], list(new_translations.values())
-        )
-
+        if request.is_food:
+            # 5. 保存新结果
+            try:
+                save_translations_batch(
+                    [item.model_dump() for item in to_translate], list(new_translations.values())
+                )
+            except Exception as e:
+                print("保存翻译结果失败:", e)
+                # 如果保存失败，仍然返回翻译结果
     # 6. 合并结果
     all_translations = {**cached, **new_translations}
     return {"code": 200, "message": "success", "data": [
@@ -86,7 +89,8 @@ def custom_openapi():
                     "data": [
                         {"content": "语言", "lang": "zh"},
                         {"content": "订单ID", "lang": "zh"},
-                    ]
+                    ],
+                    "is_food": True
                 }
             }
         }

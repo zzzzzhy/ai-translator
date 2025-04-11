@@ -8,6 +8,11 @@ from typing import List, Dict
 from .models import TranslationItem, TranslationResult
 import os
 import asyncio
+from langchain_core.runnables import RunnableLambda
+
+def print_messages(messages):
+    print("渲染后的 Prompt Messages:",messages)
+    return messages
 
 class AITranslator:
     def __init__(self, api_key: str, model: str = "deepseek", use_proxy: str = None, **kwargs):
@@ -62,6 +67,7 @@ class AITranslator:
                 max_retries=2,
             )
         self._init_chain()
+    # 插入一个打印消息的中间件
 
     def _init_chain(self):
         """初始化单请求多语言翻译链"""
@@ -79,12 +85,13 @@ class AITranslator:
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_msg),
-            ("human", "请翻译以下文本（保持编号不变）：\n\n{texts}\n\n请按以下格式返回：\n编号. 原文\n  zh-TW: 繁体中文翻译\n  tr: 土耳其语翻译\n  th: 泰语翻译\n  ja: 日语翻译\n  ko: 韩语翻译\n  en: 英语翻译\n  my: 缅甸语翻译\n  de: 德语翻译")
+            ("human", "请翻译以下文本（保持编号不变):\n\n{texts}\n\n请按以下格式返回:\n编号:-> <content>原文<content>\n<end>  zh: 简体中文翻译<end>  zh-TW: 繁体中文翻译<end>  tr: 土耳其语翻译<end>  th: 泰语翻译<end>  ja: 日语翻译<end>  ko: 韩语翻译<end>  en: 英语翻译<end>  my: 缅甸语翻译<end>  de: 德语翻译<end>")
         ])
-
+        print_node = RunnableLambda(print_messages)
         self.chain = (
             {"texts": RunnablePassthrough()} 
             | prompt 
+            # | print_node
             | self.llm 
             | self._parse_output
         )
@@ -93,25 +100,29 @@ class AITranslator:
         """解析多语言批量翻译结果"""
         results = {}
         current_id = None
-        
-        for line in response.content.split("\n"):
+        for line in response.content.split("<end>"):
             line = line.strip()
             if not line:
                 continue
                 
             # 检查是否是编号行
-            if line[0].isdigit() and ". " in line:
-                parts = line.split(". ", 1)
+            if line[0].isdigit() and ":->" in line:
+                parts = line.split(":->", 1)
                 current_id = int(parts[0]) - 1  # 转换为0-based索引
-                results[current_id] = {"zh": parts[1]}
+                results[current_id] = {}
+                # results[current_id] = {"zh": parts[1]}
             # 检查是否是翻译行
             elif ": " in line and current_id is not None:
-                lang, translation = line.split(": ", 1)
-                results[current_id][lang.strip()] = translation.strip()
+                for lang in ["zh", "zh-TW", "tr", "th", "ja", "ko", "en", "my", "de"]:
+                    if line.startswith(lang + ":"):
+                        translation = line.split(": ", 1)[1]
+                        results[current_id][lang] = translation.strip()
+                # lang, translation = line.split(": ", 1)
+                # results[current_id][lang.strip()] = translation.strip()
         
         # 转换为按语言分组的格式
         translations = {}
-        for lang in ["zh-TW", "tr", "th", "ja", "ko", "en", "my", "de"]:
+        for lang in ["zh", "zh-TW", "tr", "th", "ja", "ko", "en", "my", "de"]:
             translations[lang] = [results[i][lang] for i in sorted(results.keys())]
             
         return translations
@@ -120,10 +131,10 @@ class AITranslator:
         """主翻译方法（单请求批量处理）"""
         # 准备待翻译文本（带编号）
         texts_with_numbers = "\n".join(
-            f"{idx+1}. {item.content}" 
+            f"{idx+1}:-> <content>{item.content}<content>" 
             for idx, item in enumerate(items)
         )
-
+        print(texts_with_numbers)
         # 执行翻译
         all_results = await self.chain.ainvoke(texts_with_numbers)
         print("all_results------", all_results)
@@ -132,10 +143,9 @@ class AITranslator:
         for idx, item in enumerate(items):
             translated = {
                 "key": item.content,
-                "zh": item.content,
                 **{
                     lang: all_results[lang][idx]
-                    for lang in ["zh-TW", "tr", "th", "ja", "ko", "en", "my", "de"]
+                    for lang in ["zh", "zh-TW", "tr", "th", "ja", "ko", "en", "my", "de"]
                 }
             }
             results.append(TranslationResult(**translated))

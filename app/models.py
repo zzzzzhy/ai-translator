@@ -7,6 +7,7 @@ class TranslationItem(BaseModel):
 
 class TranslationRequest(BaseModel):
     data: List[TranslationItem]
+    is_food: Optional[bool] = True
 
 class TranslationResult(BaseModel):
     key: str
