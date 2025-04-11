@@ -115,7 +115,7 @@ class AITranslator:
             elif ": " in line and current_id is not None:
                 for lang in ["zh", "zh-TW", "tr", "th", "ja", "ko", "en", "my", "de"]:
                     if line.startswith(lang + ":"):
-                        translation = line.split(": ", 1)[1]
+                        translation = line.split(lang + ":", 1)[1]
                         results[current_id][lang] = translation.strip()
                 # lang, translation = line.split(": ", 1)
                 # results[current_id][lang.strip()] = translation.strip()
