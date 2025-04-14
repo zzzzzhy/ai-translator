@@ -63,7 +63,6 @@ async def translate_with_cache(request: TranslationRequest):
     return {"code": 200, "message": "success", "data": [
         TranslationResult(
             key=text,
-            zh=text,
             **all_translations.get(text, {})
         )
         for text in source_texts
