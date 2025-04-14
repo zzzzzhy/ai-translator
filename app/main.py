@@ -45,7 +45,7 @@ async def translate_with_cache(request: TranslationRequest):
         new_translations = {
             item.content: {
                 lang: getattr(result, "zh_tw" if lang == "zh-TW" else lang)
-                for lang in ["zh-TW", "en", "ja", "ko", "tr", "th", "my", "de"]
+                for lang in ["zh", "zh-TW", "en", "ja", "ko", "tr", "th", "my", "de"]
             }
             for item, result in zip(to_translate, raw_results)
         }
