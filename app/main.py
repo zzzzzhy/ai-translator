@@ -52,8 +52,15 @@ async def translate_with_cache(request: TranslationRequest):
         if request.is_food:
             # 5. 保存新结果
             try:
+                save_results = []
+                for item in to_translate:
+                    if len(new_translations.get(item.content)[item.lang]) != len(item.content):
+                        print("翻译长度不一致", item.content, new_translations.get(item.content)[item.lang], item.lang)
+                        continue
+                    else:
+                        save_results.append(item.model_dump())
                 save_translations_batch(
-                    [item.model_dump() for item in to_translate], list(new_translations.values())
+                    save_results, list(new_translations.values())
                 )
             except Exception as e:
                 print("保存翻译结果失败:", e)
