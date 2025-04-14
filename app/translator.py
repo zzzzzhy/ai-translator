@@ -106,11 +106,10 @@ class AITranslator:
             if not line:
                 continue
             # 检查是否是编号行
-            if line[0].isdigit() and ":->" in line:
+            if ":->" in line:
                 parts = line.split(":->", 1)
-                current_id = int(parts[0]) - 1  # 转换为0-based索引
+                current_id = int(parts[0][-1]) - 1  # 转换为0-based索引
                 results[current_id] = {}
-                # results[current_id] = {"zh": parts[1]}
             # 检查是否是翻译行
             elif ": " in line and current_id is not None:
                 for lang in ["zh", "zh-TW", "tr", "th", "ja", "ko", "en", "my", "de"]:
