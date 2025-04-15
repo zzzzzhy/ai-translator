@@ -72,21 +72,20 @@ class AITranslator:
     def _init_chain(self):
         """初始化单请求多语言翻译链"""
         system_msg = """你是一位专业的多语言翻译专家,对菜名有专业的理解,能进行本地化翻译,请将以下中文文本同时翻译为多种语言:
-- zh: 简体中文
-- zh-TW: 繁体中文(台湾用语)
-- tr: 土耳其语
-- th: 泰语
-- ja: 日语
-- ko: 韩语
-- en: 英语
-- my: 缅甸语
-- de: 德语
+- 繁体中文(台湾用语)
+- 土耳其语
+- 泰语
+- 日语
+- 韩语
+- 英语
+- 缅甸语
+- 德语
 
 请按照指定格式返回结果,保持编号不变。如果存在多种结果,只需要返回一个"""
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_msg),
-            ("human", """请翻译以下文本（保持编号不变):\n\n{texts}\n\n请按以下格式返回,```[{"key": "原文","zh": null,"zh-TW":null}]```""")
+            ("human", "请翻译以下文本（保持编号不变):\n\n{texts}\n\n请按以下格式返回,保留<content>和<end>标签:\n编号:-> <content>原文<content>\n<end>  zh: 简体中文翻译<end>  zh-TW: 繁体中文翻译<end>  tr: 土耳其语翻译<end>  th: 泰语翻译<end>  ja: 日语翻译<end>  ko: 韩语翻译<end>  en: 英语翻译<end>  my: 缅甸语翻译<end>  de: 德语翻译<end>")
         ])
         print_node = RunnableLambda(print_messages)
         self.chain = (
