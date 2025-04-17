@@ -86,13 +86,13 @@ class AITranslator:
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_msg),
-            ("human", "请翻译以下文本(保持编号不变):\n\n{texts}\n\n请按以下格式返回,保留<end>和换行标签,不要添加翻译标识:\n编号:-> \n<end>  zh: null<end>  zh-TW: null<end>  tr: null<end>  th: null<end>  ja: null<end>  ko: null<end>  en: null<end>  my: null<end>  de: null<end>")
+            ("human", "请翻译以下文本(保持编号不变):\n\n{texts}\n\n请按以下格式返回,保留<end>标签和换行符(\\n),不要添加翻译标识:\n编号:-> \n<end>  zh: null<end>  zh-TW: null<end>  tr: null<end>  th: null<end>  ja: null<end>  ko: null<end>  en: null<end>  my: null<end>  de: null<end>")
         ])
         print_node = RunnableLambda(print_messages)
         self.chain = (
             {"texts": RunnablePassthrough()} 
             | prompt 
-            # | print_node
+            | print_node
             | self.llm 
             | self._parse_output
         )
