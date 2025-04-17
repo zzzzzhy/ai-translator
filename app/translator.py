@@ -71,7 +71,7 @@ class AITranslator:
 
     def _init_chain(self):
         """初始化单请求多语言翻译链"""
-        system_msg = """你是一位专业的多语言翻译专家,对菜名有专业的理解,能进行本地化翻译,请将以下中文文本同时翻译为多种语言:
+        system_msg = """你是一位专业的多语言翻译专家,对菜名有专业的理解,能进行本地化翻译,将文本同时翻译为多种语言:
 - zh: 简体中文
 - zh-TW: 繁体中文(台湾用语)
 - tr: 土耳其语
@@ -82,11 +82,11 @@ class AITranslator:
 - my: 缅甸语
 - de: 德语
 
-请按照指定格式返回结果,保持编号不变。如果存在多种结果,只需要返回一个"""
+按照指定格式返回结果。如果存在多种结果,只需要返回一个"""
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_msg),
-            ("human", "请翻译以下文本(保持编号不变):\n\n{texts}\n\n请按以下格式返回,保留<end>标签和换行符(\\n),不要添加翻译标识:\n编号:-> \n<end>  zh: null<end>  zh-TW: null<end>  tr: null<end>  th: null<end>  ja: null<end>  ko: null<end>  en: null<end>  my: null<end>  de: null<end>")
+            ("human", "请翻译以下文本(保持编号不变,保留<end>标签和换行符(\n),不要添加翻译标识):\n\n{texts}\n\n请按以下格式返回:\n编号:-> \n<end>  zh: null<end>  zh-TW: null<end>  tr: null<end>  th: null<end>  ja: null<end>  ko: null<end>  en: null<end>  my: null<end>  de: null<end>")
         ])
         print_node = RunnableLambda(print_messages)
         self.chain = (
@@ -137,7 +137,7 @@ class AITranslator:
         print(texts_with_numbers)
         # 执行翻译
         all_results = await self.chain.ainvoke(texts_with_numbers)
-        print("all_results------", all_results)
+        # print("all_results------", all_results)
         # 构建最终结果
         results = []
         for idx, item in enumerate(items):
