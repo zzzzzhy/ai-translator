@@ -15,7 +15,7 @@ def print_messages(messages):
     return messages
 
 class AITranslator:
-    def __init__(self, api_key: str, model: str = "deepseek", use_proxy: str = None, **kwargs):
+    def __init__(self, api_key: str, model: str = "deepseek", use_proxy: str = None, system_prompt: str = None, human_prompt: str = None, **kwargs):
         if use_proxy:
             os.environ["https_proxy"] = use_proxy
             os.environ["http_proxy"] = use_proxy
@@ -60,16 +60,16 @@ class AITranslator:
             os.environ["AZURE_OPENAI_ENDPOINT"] = "https://ttpos.openai.azure.com"
             self.llm = AzureChatOpenAI(
                 azure_deployment="gpt-4o",
-                api_version="2024-08-01-preview",
+                api_version="2025-04-01-preview",
                 temperature=0,
                 max_tokens=None,
                 timeout=None,
                 max_retries=2,
             )
-        self._init_chain()
+        self._init_chain(system_prompt, human_prompt)
     # 插入一个打印消息的中间件
 
-    def _init_chain(self):
+    def _init_chain(self,system_prompt: str = None, human_prompt: str = None):
         """初始化单请求多语言翻译链"""
         system_msg = """你是一位专业的多语言翻译专家,对菜名有专业的理解,能进行本地化翻译,将文本同时翻译为多种语言:
 - zh: 简体中文
@@ -81,12 +81,20 @@ class AITranslator:
 - en: 英语
 - my: 缅甸语
 - de: 德语
-
-按照指定格式返回结果。如果存在多种结果,只需要返回一个"""
-        
+如果存在多种结果,只需要返回一个"""
+        human_msg = """请翻译以下文本:
+        ```
+        {texts}
+        ```
+        保持编号不变,保留<end>标签,保留换行符(\n),不要添加翻译标识,@字符开始的英文单词保留原始内容,严格按以下格式返回:
+        编号:-> \n<end>  zh: null<end>  zh-TW: null<end>  tr: null<end>  th: null<end>  ja: null<end>  ko: null<end>  en: null<end>  my: null<end>  de: null<end>"""
+        if system_prompt:
+            system_msg = system_prompt
+        if human_prompt:
+            human_msg = human_prompt
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_msg),
-            ("human", "请翻译以下文本:\n\n{texts}\n\n,保持编号不变,保留<end>标签,保留换行符(\n),不要添加翻译标识,按以下格式返回:\n编号:-> \n<end>  zh: null<end>  zh-TW: null<end>  tr: null<end>  th: null<end>  ja: null<end>  ko: null<end>  en: null<end>  my: null<end>  de: null<end>")
+            ("human", human_msg)
         ])
         print_node = RunnableLambda(print_messages)
         self.chain = (

@@ -23,8 +23,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-translator = AITranslator(os.getenv("OPENAI_API_KEY"), os.getenv("MODEL"), os.getenv("PROXY"))
-
+system_prompt = """你是一位专业的多语言翻译专家,对菜名有专业的理解,能进行本地化翻译,将文本同时翻译为多种语言:
+- zh: 简体中文
+- zh-TW: 繁体中文(台湾用语)
+- tr: 土耳其语
+- th: 泰语
+- ja: 日语
+- ko: 韩语
+- en: 英语
+- my: 缅甸语
+- de: 德语
+如果存在多种结果,只需要返回一个"""
+human_prompt = """请翻译以下文本:
+{texts}
+,保持编号不变,保留<end>标签,保留换行符(\n),不要添加翻译标识,@字符开始的英文单词保留原内容,严格按以下格式返回:
+编号:-> \n<end>  zh: null<end>  zh-TW: null<end>  tr: null<end>  th: null<end>  ja: null<end>  ko: null<end>  en: null<end>  my: null<end>  de: null<end>"""
+        
+translator = AITranslator(os.getenv("OPENAI_API_KEY"), os.getenv("MODEL"), os.getenv("PROXY"),system_prompt,human_prompt)
 
 @app.post("/translate", response_model=TranslationResponse)
 async def translate_with_cache(request: TranslationRequest):
