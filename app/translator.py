@@ -14,7 +14,19 @@ from langchain_core.runnables import RunnableLambda
 def print_messages(messages):
     print("渲染后的 Prompt Messages:",messages)
     return messages
-
+def parse_result(result):
+    """解析结果"""
+    if not result:
+        raise ValueError("解析失败")
+    match = re.search(r'\{[\s\S]*\}', result)
+    if match:
+        try:
+            data = match.group().replace("\n", "")
+            return json.loads(data)
+        except Exception as e:
+            raise ValueError("转换json失败")
+    else:
+        raise ValueError("匹配失败")
 class AITranslator:
     def __init__(self, api_key: str, model_vender: str = "openai", model: str = "gpt-4.1-mini",  use_proxy: str = None, system_prompt: str = None, human_prompt: str = None, **kwargs):
         if use_proxy:
@@ -118,19 +130,7 @@ class AITranslator:
     #         translations[lang] = [results[i][lang] for i in sorted(results.keys())]
             
     #     return translations
-    def parse_result(result):
-        """解析结果"""
-        if not result:
-            return {"error": "解析失败"}
-        match = re.search(r'\{[\s\S]*\}', result)
-        if match:
-            try:
-                data = match.group().replace("\n", "")
-                return json.loads(data)
-            except Exception as e:
-                return {"error": "转换json失败"}
-        else:
-            return {"error": "匹配失败"}
+
     async def translate_batch(self, items: List[TranslationItem]) -> List[TranslationResult]:
         """主翻译方法（单请求批量处理）"""
         # 准备待翻译文本（带编号）
@@ -143,10 +143,11 @@ class AITranslator:
         all_results = await self.chain.ainvoke(texts_with_numbers)
         print("all_results------", all_results)
         try:
-            data = self.parse_result(all_results.content)
+            data = parse_result(all_results.content)
             results = data.get("data")
             return results
         except Exception as e:
+            print(e)
             return []
         
         # for idx, item in enumerate(items):
