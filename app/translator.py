@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from typing import List, Dict
 from .models import TranslationItem, TranslationResult
 import os
-import asyncio
+import re
 from langchain_core.runnables import RunnableLambda
 
 def print_messages(messages):
@@ -118,7 +118,19 @@ class AITranslator:
     #         translations[lang] = [results[i][lang] for i in sorted(results.keys())]
             
     #     return translations
-    
+    def parse_result(result):
+        """解析结果"""
+        if not result:
+            return {"error": "解析失败"}
+        match = re.search(r'\{[\s\S]*\}', result)
+        if match:
+            try:
+                data = match.group().replace("\n", "")
+                return json.loads(data)
+            except Exception as e:
+                return {"error": "转换json失败"}
+        else:
+            return {"error": "匹配失败"}
     async def translate_batch(self, items: List[TranslationItem]) -> List[TranslationResult]:
         """主翻译方法（单请求批量处理）"""
         # 准备待翻译文本（带编号）
@@ -131,7 +143,7 @@ class AITranslator:
         all_results = await self.chain.ainvoke(texts_with_numbers)
         print("all_results------", all_results)
         try:
-            data = json.loads(all_results.content)
+            data = self.parse_result(all_results.content)
             results = data.get("data")
             return results
         except Exception as e:
