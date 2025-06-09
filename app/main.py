@@ -34,18 +34,41 @@ system_prompt = """你是一位专业的多语言翻译专家,对菜名有专业
 - my: 缅甸语
 - de: 德语
 如果存在多种结果,只需要返回一个"""
-human_prompt = """请翻译以下文本:
+human_prompt = """请翻译<content>标签内的文本:
 {texts}
-,保持编号不变,保留<end>标签,保留换行符(\n),不要添加翻译标识,@字符开始的英文单词保留原内容,严格按以下格式返回:
-编号:-> \n<end>  zh: null<end>  zh-TW: null<end>  tr: null<end>  th: null<end>  ja: null<end>  ko: null<end>  en: null<end>  my: null<end>  de: null<end>"""
+保留换行符(\n),@字符开始的英文单词保留原内容,按以下json格式返回:
+```
+{{
+"data": [
+    {{
+      "zh": null,
+      "zh-TW": null,
+      "tr": null,
+      "th": null,
+      "ja": null,
+      "ko": null,
+      "en": null,
+      "my": null,
+      "de": null
+    }}
+]
+}}
+```
+"""
         
-translator = AITranslator(os.getenv("OPENAI_API_KEY"), os.getenv("MODEL"), os.getenv("PROXY"),system_prompt,human_prompt)
+translator = AITranslator(os.getenv("OPENAI_API_KEY"),os.getenv("MODEL_VENDER"), os.getenv("MODEL"), os.getenv("PROXY"),system_prompt,human_prompt)
+
+@app.get("/health")
+async def health_check():
+    return "success"
 
 @app.post("/translate", response_model=TranslationResponse)
 async def translate_with_cache(request: TranslationRequest):
     # 1. 准备数据
     source_texts = [item.content for item in request.data]
     source_lang = request.data[0].lang if request.data else "zh"
+    if source_lang == "cn":
+        source_lang = "zh"
     print("request------", request.data,request.is_food)
     # 2. 查询缓存
     cached = get_cached_translations(source_texts, source_lang)
@@ -56,21 +79,26 @@ async def translate_with_cache(request: TranslationRequest):
     new_translations = {}
     if to_translate:
         raw_results = await translator.translate_batch(to_translate)
-        # 转换格式：{"文本": {"en": "翻译", "ja": "翻訳"...}}
+        if not raw_results:
+            return {"code": 500, "message": "翻译失败", "data": []}
+        content_to_translations = {}
+        for item in raw_results:
+            for value in item.values():
+                content_to_translations[value] = item
+
+        # 2. 遍历 b，检查 content 是否在 content_to_translations 中
         new_translations = {
-            item.content: {
-                lang: getattr(result, "zh_tw" if lang == "zh-TW" else lang)
-                for lang in ["zh", "zh-TW", "en", "ja", "ko", "tr", "th", "my", "de"]
-            }
-            for item, result in zip(to_translate, raw_results)
+            item.content: content_to_translations[item.content]
+            for item in to_translate
+            if item.content in content_to_translations
         }
         if request.is_food:
             # 5. 保存新结果
             try:
                 save_results = []
                 for item in to_translate:
-                    if len(new_translations.get(item.content)[item.lang]) != len(item.content):
-                        print("翻译长度不一致", item.content, new_translations.get(item.content)[item.lang], item.lang)
+                    if len(new_translations.get(item.content)[source_lang]) != len(item.content):
+                        print("翻译长度不一致", item.content, new_translations.get(item.content)[source_lang], source_lang)
                         continue
                     else:
                         save_results.append(item.model_dump())
