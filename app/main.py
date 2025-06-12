@@ -5,7 +5,7 @@ from .models import TranslationRequest, TranslationResponse, TranslationResult
 from .translator import AITranslator
 from .crud import get_cached_translations, save_translations_batch
 import os
-from typing import List, Dict
+import re
 from .database import init_db
 
 init_db()
@@ -58,6 +58,12 @@ human_prompt = """请翻译<content>标签内的文本:
         
 translator = AITranslator(os.getenv("OPENAI_API_KEY"),os.getenv("MODEL_VENDER"), os.getenv("MODEL"), os.getenv("PROXY"),system_prompt,human_prompt)
 
+def remove_all_symbols(text):
+    if not isinstance(text, str):
+        return text
+    return re.sub(r'[^\w]', '', text)
+
+
 @app.get("/health")
 async def health_check():
     return "success"
@@ -87,11 +93,23 @@ async def translate_with_cache(request: TranslationRequest):
                 content_to_translations[value] = item
 
         # 2. 遍历 b，检查 content 是否在 content_to_translations 中
-        new_translations = {
-            item.content: content_to_translations[item.content]
-            for item in to_translate
-            if item.content in content_to_translations
-        }
+        try:
+            normalized_content = {
+                remove_all_symbols(k): v for k, v in content_to_translations.items()
+            }
+            new_translations = {
+                item.content: normalized_content[remove_all_symbols(item.content)]
+                for item in to_translate
+                if remove_all_symbols(item.content) in normalized_content
+            }
+        except Exception as e:
+            print("预处理翻译内容失败:", e)
+            new_translations = {
+                item.content: content_to_translations[item.content]
+                for item in to_translate
+                if item.content in content_to_translations
+            }
+            
         if request.is_food:
             # 5. 保存新结果
             try:
