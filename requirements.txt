@@ -9,6 +9,5 @@ langchain-openai
 langchain-google-vertexai
 langchain-google-genai
 langchain-ollama
-pymysql
-DBUtils
+aiomysql
 socksio

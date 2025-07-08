@@ -53,7 +53,7 @@ LANG_NAME_MAP = {
     "es": "西班牙语",
     "it": "意大利语",
     "ru": "俄语",
-    "sv-SE": "瑞典语"
+    "sv": "瑞典语"
     # 可继续扩展
 }
 
@@ -81,7 +81,7 @@ async def health_check():
 
 @app.post("/translate", response_model=TranslationResponse)
 async def translate_with_cache(request: TranslationRequest):
-    trans_list = request.trans or ["zh","zh-TW","tr","th","ja","ko","en","my","de"]
+    trans_list = request.trans or ["zh","zh-TW","tr","th","ja","ko","en","my","de","sv"]
     custom_system_prompt, custom_human_prompt = build_prompts(trans_list)
     translator = AITranslator(
         os.getenv("OPENAI_API_KEY"),
