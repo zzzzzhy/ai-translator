@@ -10,7 +10,7 @@ class TranslationItem(BaseModel):
 class TranslationRequest(BaseModel):
     data: List[TranslationItem]
     force_trans: Optional[bool] = False
-    trans: Optional[List[str]] = []
+    trans: Optional[List[str]] = None
 
 class TranslationResult(BaseModel):
     key: str

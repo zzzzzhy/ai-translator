@@ -67,7 +67,8 @@ async def health_check():
 
 @app.post("/translate", response_model=TranslationResponse)
 async def translate_with_cache(request: TranslationRequest):
-    trans_list = getattr(request, "trans", [])  # 默认中英文
+    trans_list = request.trans or ["zh","zh-TW","tr","th","ja","ko","en","my","de"]
+    print(trans_list)
     custom_system_prompt, custom_human_prompt = build_prompts(trans_list)
     translator = AITranslator(
         os.getenv("OPENAI_API_KEY"),
