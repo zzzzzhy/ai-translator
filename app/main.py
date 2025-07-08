@@ -6,13 +6,27 @@ from .translator import AITranslator
 from .crud import get_cached_translations, save_translations_batch
 import os
 import re
-from .database import init_db
+from .database import init_db, mysql_write_pool, mysql_read_pool
+import asyncio
+from contextlib import asynccontextmanager
 
-init_db()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+    # 应用关闭时释放 aiomysql 连接池
+    if mysql_write_pool is not None:
+        mysql_write_pool.close()
+        await mysql_write_pool.wait_closed()
+    if mysql_read_pool is not None:
+        mysql_read_pool.close()
+        await mysql_read_pool.wait_closed()
+
 app = FastAPI(
     title="AI 翻译服务 API",
     description="基于 langchain 和 AI 的多语言翻译服务",
     version="1.0.1",
+    lifespan=lifespan,
 )
 
 # 配置 CORS
@@ -68,7 +82,6 @@ async def health_check():
 @app.post("/translate", response_model=TranslationResponse)
 async def translate_with_cache(request: TranslationRequest):
     trans_list = request.trans or ["zh","zh-TW","tr","th","ja","ko","en","my","de"]
-    print(trans_list)
     custom_system_prompt, custom_human_prompt = build_prompts(trans_list)
     translator = AITranslator(
         os.getenv("OPENAI_API_KEY"),
@@ -88,7 +101,7 @@ async def translate_with_cache(request: TranslationRequest):
     if request.force_trans:
         cached = {}
     else:
-        cached = get_cached_translations(source_texts, source_lang, trans_list)
+        cached = await get_cached_translations(source_texts, source_lang, trans_list)
     print("cached------", cached)
     # 3. 分离需要翻译的文本
     to_translate = [
@@ -109,41 +122,13 @@ async def translate_with_cache(request: TranslationRequest):
                 if item.id == raw_item.get("id"):
                     new_translations[item.content]= {k: v for k, v in raw_item.items() if k != "id"
         }
-        # content_to_translations = {}
-        # for item in raw_results:
-        #     for value in item.values():
-        #         content_to_translations[value] = item
-        
-        # # 2. 遍历 b，检查 content 是否在 content_to_translations 中
-        # try:
-        #     normalized_content = {
-        #         remove_all_symbols(k): v for k, v in content_to_translations.items()
-        #     }
-        #     print(normalized_content)
-        #     new_translations = {
-        #         item.content: normalized_content[remove_all_symbols(item.content)]
-        #         for item in to_translate
-        #         if item.id == normalized_content
-        #     }
-        #     print(new_translations)
-        # except Exception as e:
-        #     print("预处理翻译内容失败:", e)
-        #     new_translations = {
-        #         item.content: content_to_translations[item.content]
-        #         for item in to_translate
-        #         if item.content in content_to_translations
-        #     }
             
         # 5. 保存新结果
         try:
             save_results = []
             for item in to_translate:
-                # if len(new_translations.get(item.content)[source_lang]) != len(item.content):
-                #     print("翻译长度不一致", item.content, new_translations.get(item.content)[source_lang], source_lang)
-                #     continue
-                # else:
                 save_results.append(item.model_dump())
-            save_translations_batch(
+            await save_translations_batch(
                 save_results, list(new_translations.values()), trans_list
             )
         except Exception as e:
