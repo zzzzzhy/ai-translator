@@ -39,6 +39,7 @@ LANG_NAME_MAP = {
     "es": "西班牙语",
     "it": "意大利语",
     "ru": "俄语",
+    "sv-SE": "瑞典语"
     # 可继续扩展
 }
 
@@ -46,6 +47,7 @@ def build_prompts(trans_list):
     lang_list = [(code, LANG_NAME_MAP.get(code, code)) for code in trans_list]
     lang_str = "\n".join([f"- {k}: {v}" for k, v in lang_list])
     json_fields = ",".join([f'"{k}": null' for k, _ in lang_list])
+    json_fields += ', "id": 序号'
     # print(json_fields)
     system_prompt = f"""你是一位专业的多语言翻译专家，能进行本地化翻译，将文本同时翻译为多种语言:\n{lang_str}\n如果存在多种结果,只需要返回一个"""
     human_prompt = f"""请翻译<content>标签内的文本:\n{{texts}}\n保留换行符(\\n),@字符开始的英文单词保留原内容,按以下json格式返回:\n```
@@ -65,7 +67,7 @@ async def health_check():
 
 @app.post("/translate", response_model=TranslationResponse)
 async def translate_with_cache(request: TranslationRequest):
-    trans_list = getattr(request, "trans", ["zh","zh-TW","tr","th","ja","ko","en","my","de"])  # 默认中英文
+    trans_list = getattr(request, "trans", [])  # 默认中英文
     custom_system_prompt, custom_human_prompt = build_prompts(trans_list)
     translator = AITranslator(
         os.getenv("OPENAI_API_KEY"),
@@ -83,50 +85,63 @@ async def translate_with_cache(request: TranslationRequest):
     print("request------", request.data,request.force_trans)
     # 2. 查询缓存
     if request.force_trans:
-        cached = []
+        cached = {}
     else:
         cached = get_cached_translations(source_texts, source_lang, trans_list)
     print("cached------", cached)
     # 3. 分离需要翻译的文本
-    to_translate = [item for item in request.data if item.content not in cached]
+    to_translate = [
+        item for item in request.data
+        if item.content not in cached
+    ]
+    for idx, item in enumerate(to_translate):
+        setattr(item, "id", idx)
+    print(to_translate)
     # 4. 调用AI翻译
     new_translations = {}
     if to_translate:
         raw_results = await translator.translate_batch(to_translate)
         if not raw_results:
             return {"code": 500, "message": "翻译失败", "data": []}
-        content_to_translations = {}
-        for item in raw_results:
-            for value in item.values():
-                content_to_translations[value] = item
-
-        # 2. 遍历 b，检查 content 是否在 content_to_translations 中
-        try:
-            normalized_content = {
-                remove_all_symbols(k): v for k, v in content_to_translations.items()
-            }
-            new_translations = {
-                item.content: normalized_content[remove_all_symbols(item.content)]
-                for item in to_translate
-                if remove_all_symbols(item.content) in normalized_content
-            }
-        except Exception as e:
-            print("预处理翻译内容失败:", e)
-            new_translations = {
-                item.content: content_to_translations[item.content]
-                for item in to_translate
-                if item.content in content_to_translations
-            }
+        for raw_item in raw_results:
+            for item in to_translate:
+                if item.id == raw_item.get("id"):
+                    new_translations[item.content]= {k: v for k, v in raw_item.items() if k != "id"
+        }
+        # content_to_translations = {}
+        # for item in raw_results:
+        #     for value in item.values():
+        #         content_to_translations[value] = item
+        
+        # # 2. 遍历 b，检查 content 是否在 content_to_translations 中
+        # try:
+        #     normalized_content = {
+        #         remove_all_symbols(k): v for k, v in content_to_translations.items()
+        #     }
+        #     print(normalized_content)
+        #     new_translations = {
+        #         item.content: normalized_content[remove_all_symbols(item.content)]
+        #         for item in to_translate
+        #         if item.id == normalized_content
+        #     }
+        #     print(new_translations)
+        # except Exception as e:
+        #     print("预处理翻译内容失败:", e)
+        #     new_translations = {
+        #         item.content: content_to_translations[item.content]
+        #         for item in to_translate
+        #         if item.content in content_to_translations
+        #     }
             
         # 5. 保存新结果
         try:
             save_results = []
             for item in to_translate:
-                if len(new_translations.get(item.content)[source_lang]) != len(item.content):
-                    print("翻译长度不一致", item.content, new_translations.get(item.content)[source_lang], source_lang)
-                    continue
-                else:
-                    save_results.append(item.model_dump())
+                # if len(new_translations.get(item.content)[source_lang]) != len(item.content):
+                #     print("翻译长度不一致", item.content, new_translations.get(item.content)[source_lang], source_lang)
+                #     continue
+                # else:
+                save_results.append(item.model_dump())
             save_translations_batch(
                 save_results, list(new_translations.values()), trans_list
             )
@@ -135,7 +150,7 @@ async def translate_with_cache(request: TranslationRequest):
             # 如果保存失败，仍然返回翻译结果
     # 6. 合并结果
     all_translations = {**cached, **new_translations}
-    print(all_translations)
+    print(all_translations,new_translations,cached)
     return {"code": 200, "message": "success", "data": [
         TranslationResult(
             key=text,

@@ -129,8 +129,8 @@ class AITranslator:
         """主翻译方法（单请求批量处理）"""
         # 准备待翻译文本（带编号）
         texts_with_numbers = "\n".join(
-            f"{idx+1}: <content>{item.content}<content>" 
-            for idx, item in enumerate(items)
+            f"{item.id}: <content>{item.content}<content>" 
+            for item in items
         )
         print(texts_with_numbers)
         # 执行翻译
