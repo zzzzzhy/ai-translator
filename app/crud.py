@@ -17,19 +17,19 @@ def get_cached_translations(source_texts: List[str], source_lang: str) -> Dict[s
             placeholders = ", ".join(["%s"] * len(source_texts))
             query = (
                 f"SELECT source_text, translations_blob FROM translations "
-                f"WHERE source_text IN ({placeholders}) AND source_lang = %s"
+                f"WHERE source_text IN ({placeholders})"
             )
             cursor = conn.cursor()
-            cursor.execute(query, (*source_texts, source_lang))
+            cursor.execute(query, *source_texts)
             rows = cursor.fetchall()
             cursor.close()
         else:
             placeholders = ", ".join(["?"] * len(source_texts))
             query = (
                 f"SELECT source_text, translations_blob FROM translations "
-                f"WHERE source_text IN ({placeholders}) AND source_lang = ?"
+                f"WHERE source_text IN ({placeholders}) "
             )
-            cursor = conn.execute(query, (*source_texts, source_lang))
+            cursor = conn.execute(query, *source_texts)
             rows = cursor.fetchall()
     cached_translations = {}
     for row in rows:

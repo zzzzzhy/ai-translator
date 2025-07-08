@@ -2,7 +2,6 @@ import json
 from langchain_deepseek import ChatDeepSeek
 from langchain_openai import ChatOpenAI, AzureChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from typing import List, Dict
@@ -61,11 +60,6 @@ class AITranslator:
                 max_tokens=None,
                 timeout=None,
                 max_retries=2,
-                **kwargs
-            )
-        elif model_vender == "ollama":
-            self.llm = OllamaLLM(
-                model=model,
                 **kwargs
             )
         elif model_vender == "azure":

@@ -8,6 +8,7 @@ class TranslationItem(BaseModel):
 class TranslationRequest(BaseModel):
     data: List[TranslationItem]
     is_food: Optional[bool] = True
+    trans: Optional[List[str]] = None
 
 class TranslationResult(BaseModel):
     key: str

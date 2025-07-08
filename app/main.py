@@ -12,7 +12,7 @@ init_db()
 app = FastAPI(
     title="AI 翻译服务 API",
     description="基于 langchain 和 AI 的多语言翻译服务",
-    version="1.0.0",
+    version="1.0.1",
 )
 
 # 配置 CORS
@@ -23,40 +23,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-system_prompt = """你是一位专业的多语言翻译专家,对菜名有专业的理解,能进行本地化翻译,将文本同时翻译为多种语言:
-- zh: 简体中文
-- zh-TW: 繁体中文(台湾用语)
-- tr: 土耳其语
-- th: 泰语
-- ja: 日语
-- ko: 韩语
-- en: 英语
-- my: 缅甸语
-- de: 德语
-如果存在多种结果,只需要返回一个"""
-human_prompt = """请翻译<content>标签内的文本:
-{texts}
-保留换行符(\n),@字符开始的英文单词保留原内容,按以下json格式返回:
-```
-{{
-"data": [
-    {{
-      "zh": null,
-      "zh-TW": null,
-      "tr": null,
-      "th": null,
-      "ja": null,
-      "ko": null,
-      "en": null,
-      "my": null,
-      "de": null
-    }}
-]
-}}
-```
-"""
-        
-translator = AITranslator(os.getenv("OPENAI_API_KEY"),os.getenv("MODEL_VENDER"), os.getenv("MODEL"), os.getenv("PROXY"),system_prompt,human_prompt)
+
+# 语言代码到中文名映射
+LANG_NAME_MAP = {
+    "zh": "简体中文",
+    "zh-TW": "繁体中文(台湾用语)",
+    "tr": "土耳其语",
+    "th": "泰语",
+    "ja": "日语",
+    "ko": "韩语",
+    "en": "英语",
+    "my": "缅甸语",
+    "de": "德语",
+    "fr": "法语",
+    "es": "西班牙语",
+    "it": "意大利语",
+    "ru": "俄语",
+    # 可继续扩展
+}
+
+def build_prompts(trans_list):
+    lang_list = [(code, LANG_NAME_MAP.get(code, code)) for code in trans_list]
+    lang_str = "\n".join([f"- {k}: {v}" for k, v in lang_list])
+    json_fields = "\n".join([f'"{k}": null,' for k, _ in lang_list]).rstrip(",")
+    system_prompt = f"""你是一位专业的多语言翻译专家，能进行本地化翻译，将文本同时翻译为多种语言:\n{lang_str}\n如果存在多种结果,只需要返回一个"""
+    human_prompt = f"""请翻译<content>标签内的文本:\n{{texts}}\n保留换行符(\\n),@字符开始的英文单词保留原内容,按以下json格式返回:\n```
+{{\"data\": [{{{json_fields}}}]}}```\n"""
+    return system_prompt, human_prompt
 
 def remove_all_symbols(text):
     if not isinstance(text, str):
@@ -70,6 +63,16 @@ async def health_check():
 
 @app.post("/translate", response_model=TranslationResponse)
 async def translate_with_cache(request: TranslationRequest):
+    trans_list = getattr(request, "trans", ["zh", "en"])  # 默认中英文
+    custom_system_prompt, custom_human_prompt = build_prompts(trans_list)
+    translator = AITranslator(
+        os.getenv("OPENAI_API_KEY"),
+        os.getenv("MODEL_VENDER"),
+        os.getenv("MODEL"),
+        os.getenv("PROXY"),
+        custom_system_prompt,
+        custom_human_prompt
+    )
     # 1. 准备数据
     source_texts = [item.content for item in request.data]
     source_lang = request.data[0].lang if request.data else "zh"
