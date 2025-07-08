@@ -45,10 +45,12 @@ LANG_NAME_MAP = {
 def build_prompts(trans_list):
     lang_list = [(code, LANG_NAME_MAP.get(code, code)) for code in trans_list]
     lang_str = "\n".join([f"- {k}: {v}" for k, v in lang_list])
-    json_fields = "\n".join([f'"{k}": null,' for k, _ in lang_list]).rstrip(",")
+    json_fields = ",".join([f'"{k}": null' for k, _ in lang_list])
+    # print(json_fields)
     system_prompt = f"""你是一位专业的多语言翻译专家，能进行本地化翻译，将文本同时翻译为多种语言:\n{lang_str}\n如果存在多种结果,只需要返回一个"""
     human_prompt = f"""请翻译<content>标签内的文本:\n{{texts}}\n保留换行符(\\n),@字符开始的英文单词保留原内容,按以下json格式返回:\n```
-{{\"data\": [{{{json_fields}}}]}}```\n"""
+{{{{"data": [{{{{{json_fields}}}}}]}}}}```\n"""
+    # print(system_prompt, human_prompt)
     return system_prompt, human_prompt
 
 def remove_all_symbols(text):
@@ -63,7 +65,7 @@ async def health_check():
 
 @app.post("/translate", response_model=TranslationResponse)
 async def translate_with_cache(request: TranslationRequest):
-    trans_list = getattr(request, "trans", ["zh", "en"])  # 默认中英文
+    trans_list = getattr(request, "trans", ["zh","zh-TW","tr","th","ja","ko","en","my","de"])  # 默认中英文
     custom_system_prompt, custom_human_prompt = build_prompts(trans_list)
     translator = AITranslator(
         os.getenv("OPENAI_API_KEY"),
@@ -78,9 +80,12 @@ async def translate_with_cache(request: TranslationRequest):
     source_lang = request.data[0].lang if request.data else "zh"
     if source_lang == "cn":
         source_lang = "zh"
-    print("request------", request.data,request.is_food)
+    print("request------", request.data,request.force_trans)
     # 2. 查询缓存
-    cached = get_cached_translations(source_texts, source_lang)
+    if request.force_trans:
+        cached = []
+    else:
+        cached = get_cached_translations(source_texts, source_lang, trans_list)
     print("cached------", cached)
     # 3. 分离需要翻译的文本
     to_translate = [item for item in request.data if item.content not in cached]
@@ -113,24 +118,24 @@ async def translate_with_cache(request: TranslationRequest):
                 if item.content in content_to_translations
             }
             
-        if request.is_food:
-            # 5. 保存新结果
-            try:
-                save_results = []
-                for item in to_translate:
-                    if len(new_translations.get(item.content)[source_lang]) != len(item.content):
-                        print("翻译长度不一致", item.content, new_translations.get(item.content)[source_lang], source_lang)
-                        continue
-                    else:
-                        save_results.append(item.model_dump())
-                save_translations_batch(
-                    save_results, list(new_translations.values())
-                )
-            except Exception as e:
-                print("保存翻译结果失败:", e)
-                # 如果保存失败，仍然返回翻译结果
+        # 5. 保存新结果
+        try:
+            save_results = []
+            for item in to_translate:
+                if len(new_translations.get(item.content)[source_lang]) != len(item.content):
+                    print("翻译长度不一致", item.content, new_translations.get(item.content)[source_lang], source_lang)
+                    continue
+                else:
+                    save_results.append(item.model_dump())
+            save_translations_batch(
+                save_results, list(new_translations.values()), trans_list
+            )
+        except Exception as e:
+            print("保存翻译结果失败:", e)
+            # 如果保存失败，仍然返回翻译结果
     # 6. 合并结果
     all_translations = {**cached, **new_translations}
+    print(all_translations)
     return {"code": 200, "message": "success", "data": [
         TranslationResult(
             key=text,
@@ -160,7 +165,8 @@ def custom_openapi():
                         {"content": "语言", "lang": "zh"},
                         {"content": "订单ID", "lang": "zh"},
                     ],
-                    "is_food": True
+                    "force_trans": False,
+                    "trans": ["zh","en"]
                 }
             }
         }

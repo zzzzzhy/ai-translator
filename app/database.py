@@ -95,23 +95,33 @@ def init_db():
         if DB_TYPE == "mysql":
             cursor = conn.cursor()
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS translations (
-                    source_text VARCHAR(255) PRIMARY KEY,
+                CREATE TABLE IF NOT EXISTS translations_new (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    source_text VARCHAR(255) NOT NULL,
                     source_lang VARCHAR(10) NOT NULL,
+                    trans_lang TEXT NOT NULL,
                     translations_blob TEXT NOT NULL,
                     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_source_text (source_text),
+                    UNIQUE KEY uk_source_text_lang (source_text, source_lang, trans_lang(100))
                 );
             """)
             conn.commit()
             cursor.close()
         else:
             conn.execute("""
-                CREATE TABLE IF NOT EXISTS translations (
-                    source_text TEXT PRIMARY KEY,
+                CREATE TABLE IF NOT EXISTS translations_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source_text TEXT NOT NULL,
                     source_lang TEXT NOT NULL,
+                    trans_lang TEXT NOT NULL,
                     translations_blob TEXT NOT NULL,
                     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
                     update_time DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            # SQLite创建索引
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_source_text ON translations_new(source_text)")
+            conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS uk_source_text_lang ON translations_new(source_text, source_lang, trans_lang)")
+            conn.commit()
