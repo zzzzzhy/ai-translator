@@ -34,8 +34,6 @@ class AITranslator:
         if model_vender == "deepseek":
             self.llm = ChatDeepSeek(
                 model=model,
-                temperature=0,
-                max_tokens=None,
                 timeout=None,
                 max_retries=2,
                 api_key=api_key,
@@ -45,8 +43,6 @@ class AITranslator:
         elif model_vender == "openai":
             self.llm = ChatOpenAI(
                 model=model,
-                temperature=0,
-                max_tokens=None,
                 timeout=None,
                 max_retries=2,
                 api_key=api_key,
@@ -56,8 +52,6 @@ class AITranslator:
             os.environ["GOOGLE_API_KEY"] = api_key
             self.llm = ChatGoogleGenerativeAI(
                 model=model,
-                temperature=0,
-                max_tokens=None,
                 timeout=None,
                 max_retries=2,
                 **kwargs
@@ -68,8 +62,6 @@ class AITranslator:
             self.llm = AzureChatOpenAI(
                 azure_deployment=model,
                 api_version="2025-04-01-preview",
-                temperature=0,
-                max_tokens=None,
                 timeout=None,
                 max_retries=2,
             )

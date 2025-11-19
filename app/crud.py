@@ -26,7 +26,7 @@ async def get_cached_translations(source_texts: List[str], source_lang: str, tra
         if trans_lang:
             query += " AND trans_lang = ?"
             params.append(",".join(sorted(trans_lang)))
-        with get_db('read') as (conn, cursor):
+        async with get_db('read') as (conn, cursor):
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
@@ -73,6 +73,6 @@ async def save_translations_batch(items: List[Dict], translations: List[Dict], t
             (source_text, source_lang, trans_lang, translations_blob) 
             VALUES (?, ?, ?, ?)
         """
-        with get_db('write') as (conn, cursor):
+        async with get_db('write') as (conn, cursor):
             cursor.executemany(query, data)
             conn.commit()

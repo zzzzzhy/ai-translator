@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
+
 from .models import TranslationRequest, TranslationResponse, TranslationResult
 from .translator import AITranslator
 from .crud import get_cached_translations, save_translations_batch
@@ -28,6 +29,31 @@ app = FastAPI(
     version="1.0.1",
     lifespan=lifespan,
 )
+
+# # 你的密钥，可放到环境变量中
+# VALID_API_KEY = "hitosea_devops"
+# from fastapi.openapi.docs import get_swagger_ui_html
+# from fastapi.responses import JSONResponse
+# # 自定义受保护的 docs 路由
+# @app.get("/docs", include_in_schema=False)
+# async def custom_swagger_ui(request: Request):
+#     api_key = request.query_params.get("api_key")
+
+#     if api_key != VALID_API_KEY:
+#         # 不返回 swagger，而是拒绝访问
+#         raise HTTPException(status_code=403, detail="Forbidden: Invalid API key")
+    
+#     # 如果通过验证，则返回标准 Swagger 页面
+#     return get_swagger_ui_html(
+#         openapi_url=f"/openapi.json?api_key={api_key}",
+#         title="AITRANS API Docs"
+#     )
+# @app.get("/openapi.json", include_in_schema=False)
+# async def protected_openapi(request: Request):
+#     api_key = request.query_params.get("api_key")
+#     if api_key != VALID_API_KEY:
+#         raise HTTPException(status_code=403, detail="Forbidden: Invalid API key")
+#     return JSONResponse(app.openapi())
 
 # 配置 CORS
 app.add_middleware(
@@ -89,7 +115,8 @@ async def translate_with_cache(request: TranslationRequest):
         os.getenv("MODEL"),
         os.getenv("PROXY"),
         custom_system_prompt,
-        custom_human_prompt
+        custom_human_prompt,
+        reasoning_effort="minimal"
     )
     # 1. 准备数据
     source_texts = [item.content for item in request.data]
@@ -120,16 +147,18 @@ async def translate_with_cache(request: TranslationRequest):
         for raw_item in raw_results:
             for item in to_translate:
                 if item.id == raw_item.get("id"):
-                    new_translations[item.content]= {k: v for k, v in raw_item.items() if k != "id"
-        }
+                    new_translations[item.content]= {k: v for k, v in raw_item.items() if k != "id"}
             
         # 5. 保存新结果
         try:
             save_results = []
+            valid_translations = []
             for item in to_translate:
-                save_results.append(item.model_dump())
+                if item.content in (new_translations.get(item.content) or {}).values():
+                    save_results.append(item.model_dump())
+                    valid_translations.append(new_translations.get(item.content))
             await save_translations_batch(
-                save_results, list(new_translations.values()), trans_list
+                save_results, valid_translations, trans_list
             )
         except Exception as e:
             print("保存翻译结果失败:", e)
@@ -191,6 +220,11 @@ def custom_openapi():
                         "en": "Language",
                         "my": "ဘာသာစကား",
                         "de": "Sprache",
+                        "fr": "法语",
+                        "es": "西班牙语",
+                        "it": "意大利语",
+                        "ru": "俄语",
+                        "sv": "瑞典语"
                     }
                 ]
             }
